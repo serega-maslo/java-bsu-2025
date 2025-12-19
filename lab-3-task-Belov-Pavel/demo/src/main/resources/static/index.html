@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic-Tac-Toe Lab</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f4f4; }
+        .grid { display: grid; grid-template-columns: repeat(3, 100px); gap: 5px; margin: 20px 0; }
+        .cell { width: 100px; height: 100px; font-size: 40px; text-align: center; line-height: 100px;
+                border: 2px solid #333; cursor: pointer; background: white; }
+        .cell:hover { background: #eee; }
+        input { padding: 8px; margin: 5px; border-radius: 4px; border: 1px solid #ccc; }
+        #stats { width: 300px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body onload="document.getElementById('p1').focus()">
+<h2>Tic-Tac-Toe (Lab 3)</h2>
+
+<div>
+    <input id="p1" placeholder="Player X Name">
+    <span>vs</span>
+    <input id="p2" placeholder="Player O Name">
+</div>
+
+<div id="board" class="grid">
+    <div class="cell" onclick="move(0)"></div><div class="cell" onclick="move(1)"></div><div class="cell" onclick="move(2)"></div>
+    <div class="cell" onclick="move(3)"></div><div class="cell" onclick="move(4)"></div><div class="cell" onclick="move(5)"></div>
+    <div class="cell" onclick="move(6)"></div><div class="cell" onclick="move(7)"></div><div class="cell" onclick="move(8)"></div>
+</div>
+
+<h4>Leaderboard (Total Wins):</h4>
+<div id="stats"></div>
+
+<script>
+    let turn = "X";
+    let cells = Array(9).fill("");
+
+    function move(i) {
+        if (cells[i] || checkWin()) return;
+        cells[i] = turn;
+        document.getElementsByClassName('cell')[i].innerText = turn;
+
+        if (checkWin()) {
+            let nameX = document.getElementById('p1').value || "Player X";
+            let nameO = document.getElementById('p2').value || "Player O";
+            let winner = (turn === "X") ? nameX : nameO;
+
+            alert("Winner: " + winner + "!");
+            saveWin(winner);
+        } else if (!cells.includes("")) {
+            alert("It's a Draw!");
+            resetBoard();
+        }
+        turn = (turn === "X") ? "O" : "X";
+    }
+
+    function checkWin() {
+        const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        return lines.some(l => cells[l[0]] && cells[l[0]]===cells[l[1]] && cells[l[0]]===cells[l[2]]);
+    }
+
+    async function saveWin(name) {
+        await fetch('/api/win', { method: 'POST', body: name });
+        resetBoard();
+    }
+
+    async function loadStats() {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('stats').innerHTML = data.length ?
+            data.map(p => `<p><strong>${p.name}:</strong> ${p.wins} wins</p>`).join('') :
+            "<p>No stats yet.</p>";
+    }
+
+    function resetBoard() {
+        cells = Array(9).fill("");
+        document.querySelectorAll('.cell').forEach(c => c.innerText = "");
+        loadStats();
+    }
+
+    loadStats();
+</script>
+</body>
+</html>
